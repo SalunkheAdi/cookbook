@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+let rawUrl = (import.meta.env.VITE_API_URL || '/api').trim();
+// Remove trailing slash(es)
+rawUrl = rawUrl.replace(/\/+$/, '');
+// Ensure it ends with /api (handles case where user set root URL like https://...vercel.app)
+const API_URL = rawUrl.endsWith('/api') ? rawUrl : `${rawUrl}/api`;
 
 const api = axios.create({
     baseURL: API_URL,
