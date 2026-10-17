@@ -1,19 +1,28 @@
 const mongoose = require('mongoose');
 
+let isConnected = false;
+
 const connectDB = async () => {
+  if (isConnected && mongoose.connection.readyState === 1) {
+    return;
+  }
+
   try {
     if (!process.env.MONGO_URI) {
-      throw new Error('MONGO_URI environment variable is not set. Please add it to your Vercel environment variables.');
+      console.error('MONGO_URI environment variable is not set.');
+      return;
     }
 
     const conn = await mongoose.connect(process.env.MONGO_URI, {
       serverSelectionTimeoutMS: 10000,
+      bufferCommands: false, // Fail fast if connection isn't open
     });
 
+    isConnected = true;
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     console.error(`Error connecting to MongoDB: ${error.message}`);
-    process.exit(1);
+    isConnected = false;
   }
 };
 

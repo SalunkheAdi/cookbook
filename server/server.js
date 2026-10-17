@@ -5,31 +5,27 @@ const connectDB = require('./config/db');
 
 const port = process.env.PORT || 5000;
 
-connectDB();
-
 const app = express();
 
-// CORS: allow the frontend origin (set FRONTEND_URL env var on Vercel, e.g. https://your-app.vercel.app)
-const allowedOrigins = [
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
-    process.env.FRONTEND_URL,
-].filter(Boolean);
-
+// Allow all origins with credentials for simplicity and reliability across Vercel deployments
 app.use(cors({
-    origin: function (origin, callback) {
-        // Allow requests with no origin (e.g. mobile apps, curl, Postman)
-        if (!origin) return callback(null, true);
-        if (allowedOrigins.indexOf(origin) !== -1) {
-            return callback(null, true);
-        }
-        return callback(new Error('Not allowed by CORS'));
-    },
+    origin: true,
     credentials: true,
 }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Ensure DB is connected before processing any API requests (critical for serverless cold starts)
+app.use(async (req, res, next) => {
+    try {
+        await connectDB();
+        next();
+    } catch (err) {
+        console.error('Database connection middleware error:', err);
+        res.status(500).json({ message: 'Database connection error' });
+    }
+});
 
 app.use('/api/recipes', require('./routes/recipeRoutes'));
 app.use('/api/auth', require('./routes/authRoutes'));
